@@ -5,8 +5,7 @@ Pattern idea is:<br>
 - Producer does not wait for the Consumer.<br>
 - Producers do not block each other in most operations. Sync (lock/unlock) only per Bus key (cell).<br>
 - Consumers do not block each other.<br>
-- Consumer waits on read only when Bus key is write-busy by Producer. As read operation is faster, 
-    than write, so Consumer keeps up with the Producer.
+- Consumer waits on read only when Bus key is write-busy by Producer
 
 ### Benchmarks
 
