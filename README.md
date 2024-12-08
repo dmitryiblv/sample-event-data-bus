@@ -1,7 +1,7 @@
 
 ### A simple emulation sample for "High-load pattern: Event Data Bus"
 
-Pattern concept is:<br>
+Pattern concepts are:<br>
 - Producer does not wait for the Consumer.<br>
 - Producers do not block each other in most operations. Sync (lock/unlock) only per Bus key (cell).<br>
 - Consumers do not block each other.<br>
