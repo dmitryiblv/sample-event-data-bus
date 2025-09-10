@@ -21,7 +21,7 @@ const Consumers            = 10;
 const Verbose              = false;
 
 if (!class_exists('Thread')) {
-    fwrite(STDERR, "This script requires the pthreads extension and must be run in PHP CLI.\n");
+    printf("This script requires the pthreads extension and must be run in PHP CLI.\n");
     exit(1);
 }
 
@@ -50,7 +50,7 @@ class PublishQueue extends Volatile {
                 $this->wait();
             }
             $idx = $this['head'];
-            $val = $this[$idx];
+            try { $val = $this[$idx]; } catch (Exception $e) { return null; }
             $this['head'] = $idx + 1;
             return $val;
         });
@@ -148,7 +148,7 @@ class ProducerThread extends Thread {
     public function run() {
         $queue = $this->bus->getQueue($this->id);
         if ($queue === null) {
-            fwrite(STDERR, "producer[{$this->id}] cannot find its publish queue\n");
+            printf("producer[{$this->id}] cannot find its publish queue\n");
             return;
         }
 
@@ -161,12 +161,12 @@ class ProducerThread extends Thread {
             if ($bv === null) {
                 // Defensive retry (should not occur if initCellsAndQueues ran before thread start)
                 $tries = 0;
-                while ($bv === null && $tries++ < 10) {
-                    usleep(100);
+                while ($bv === null && $tries++ < 1) {
+                    usleep(1);
                     $bv = $this->bus->getCell($bk);
                 }
                 if ($bv === null) {
-                    fwrite(STDERR, "producer[{$this->id}] missing cell for key {$bk}\n");
+                    printf("producer[{$this->id}] missing cell for key {$bk}\n");
                     continue;
                 }
             }
@@ -203,7 +203,7 @@ class ConsumerThread extends Thread {
     public function run() {
         $queue = $this->bus->getQueue($this->id);
         if ($queue === null) {
-            fwrite(STDERR, "consumer[{$this->id}] cannot find its publish queue\n");
+            printf("consumer[{$this->id}] cannot find its publish queue\n");
             return;
         }
 
@@ -216,14 +216,14 @@ class ConsumerThread extends Thread {
 
             $bv = $this->bus->getCell($bk);
             if ($bv === null) {
-                // defensive retry
+                // Defensive retry
                 $tries = 0;
-                while ($bv === null && $tries++ < 10) {
-                    usleep(100);
+                while ($bv === null && $tries++ < 1) {
+                    usleep(1);
                     $bv = $this->bus->getCell($bk);
                 }
                 if ($bv === null) {
-                    fwrite(STDERR, "consumer[{$this->id}] missing cell for key {$bk}\n");
+                    printf("consumer[{$this->id}] missing cell for key {$bk}\n");
                     continue;
                 }
             }
@@ -252,7 +252,7 @@ class ConsumerThread extends Thread {
 
 // Main flow
 if (Producers !== Consumers) {
-    fwrite(STDERR, "Producers must be equal to Consumers for this implementation.\n");
+    printf("Producers must be equal to Consumers for this implementation.\n");
     exit(1);
 }
 
@@ -273,7 +273,7 @@ for ($p = 0; $p < Producers; $p++) {
     for ($m = 0; $m < ProducerMessages; $m++) {
         $msg = 'm_' . mt_rand(0,999) . '_' . mt_rand(0,999) . '_' . mt_rand(0,999);
         if (strlen($msg) > MessageSizeMax) {
-            fwrite(STDERR, "Bad message size: " . strlen($msg) . "\n");
+            printf("Bad message size: " . strlen($msg) . "\n");
             exit(1);
         }
         $messages[$p][$m] = $msg;
