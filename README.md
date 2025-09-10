@@ -1,11 +1,12 @@
 
 ### A simple emulation sample for "High-load pattern: Event Data Bus"
 
-Pattern concepts are:<br>
+Pattern idea is:<br>
 - Producer does not wait for the Consumer.<br>
 - Producers do not block each other in most operations. Sync (lock/unlock) only per Bus key (cell).<br>
 - Consumers do not block each other.<br>
-- Consumer waits on read only when Bus key is write-busy by Producer
+- Consumer waits on read only when Bus key is write-busy by Producer. As read operation is faster, 
+    than write, so Consumer keeps up with the Producer.
 
 ### Benchmarks
 
@@ -64,3 +65,87 @@ $ go run main.go
 </pre>
 
 You can experiment with the settings in the file header.
+
+### Compare with PHP ###
+( PHP is cool and fast, but not designed for such tasks, so this is just for fun )
+
+<pre>
+Tested at:
+Ubuntu 24.04.2 LTS
+AMD Ryzen 9 5950X 16-Core Processor             Unknown CPU @ 3.4GHz
+Thread(s) per core:   2
+Core(s) per socket:   16
+CPU max MHz:          5083.3979
+CPU min MHz:          2200.0000
+
+Set ProducerMessages = 100000
+</pre>
+
+#### Go:
+
+<pre>
+$ CGO_ENABLED=0 go run -trimpath -ldflags="-s -w" -gcflags="-c 1" main.go
+Initializing event data bus: size: 256
+Generating messages: total: 1000000
+Calculating messages bus keys
+Producers: 10
+Consumers: 10
+Sending messages ...
+RPS: 892857
+Time taken: 1120 ms
+</pre>
+
+#### PHP7
+
+#### Install php-lib pthreads (uses OS-level threads):
+
+<pre>
+sudo apt update
+sudo apt install build-essential autoconf bison re2c libxml2-dev libssl-dev \
+    libbz2-dev libcurl4-openssl-dev libjpeg-dev libpng-dev libwebp-dev \
+    libxpm-dev libfreetype6-dev libzip-dev pkg-config
+
+mkdir /opt/php7 && cd /opt/php7
+wget https://github.com/php/php-src/archive/php-7.2.34.tar.gz
+tar xf php-7.2.34.tar.gz
+cd php-src-php-7.2.34
+./buildconf --force
+./configure --enable-maintainer-zts --enable-cli --enable-mbstring --with-curl
+make -j4
+sudo make install
+
+ln -s /usr/local/bin/php /usr/bin/php
+php --version
+
+mkdir zts && cd zts
+phpize
+./configure
+make -j4
+sudo make install
+ls -l /usr/local/lib/php/extensions/no-debug-zts-20170718/pthreads.so
+
+cd /opt/php7/php-src-php-7.2.34
+cp php.ini-production php.ini
+nano ./php.ini
+    memory_limit = 4G
+    ; Dynamic Extensions ;
+    extension=/usr/local/lib/php/extensions/no-debug-zts-20170718/pthreads.so
+
+php -c ./php.ini -m | grep pthreads
+php -c ./php.ini -r 'var_dump(class_exists("Thread"));'
+</pre>
+
+#### Run:
+
+<pre>
+cd {{event-bus-folder}}
+php -c /opt/php7/php-src-php-7.2.34/php.ini main.php
+Initializing event data bus: size: 256
+Generating messages: total: 1000000
+Calculating messages bus keys
+Producers: 10
+Consumers: 10
+Sending messages ...
+RPS: 4596
+Time taken: 217560 ms
+</pre>
