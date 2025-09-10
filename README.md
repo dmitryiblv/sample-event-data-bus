@@ -110,7 +110,7 @@ sudo apt install build-essential autoconf bison re2c libxml2-dev libssl-dev \
     libxpm-dev libfreetype6-dev libzip-dev pkg-config
 
 sudo mkdir /opt/php
-sudo chown <user>:<group> /opt/php 
+sudo chown USER:GROUP /opt/php 
 cd /opt/php
 wget https://github.com/php/php-src/archive/php-7.2.34.tar.gz
 tar xf php-7.2.34.tar.gz
